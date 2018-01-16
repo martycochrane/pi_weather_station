@@ -15,6 +15,7 @@ import os
 import sys
 import time
 from urllib import urlencode
+from subprocess import call
 
 import urllib2
 from sense_hat import SenseHat
@@ -28,7 +29,8 @@ from config import Config
 MEASUREMENT_INTERVAL = 10  # minutes
 # Set to False when testing the code and/or hardware
 # Set to True to enable upload of weather data to Weather Underground
-WEATHER_UPLOAD = True
+WEATHER_UPLOAD = False
+IOTA_UPLOAD = True
 # the weather underground URL used to upload weather data
 WU_URL = "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php"
 # some string constants
@@ -169,6 +171,7 @@ def main():
             pressure = round(sense.get_pressure() * 0.0295300, 1)
             print("Temp: %sF (%sC), Pressure: %s inHg, Humidity: %s%%" % (temp_f, temp_c, pressure, humidity))
 
+
             # get the current minute
             current_minute = datetime.datetime.now().minute
             # is it the same minute as the last time we checked?
@@ -224,7 +227,14 @@ def main():
                             print("Exception:", sys.exc_info()[0], SLASH_N)
                     else:
                         print("Skipping Weather Underground upload")
-
+                    if IOTA_UPLOAD:
+                        print("Uploading data to IOTA Marketplace")
+                        try:
+                            call(["node", "iota/index.js", str(temp_c), str(pressure), str(humidity)])  
+                        except:
+                            print("Exception:", sys.exc_info()[0], SLASH_N)
+                    else:
+                        print("Skipping IOTA upload")
         # wait a second then check again
         # You can always increase the sleep value below to check less often
         time.sleep(1)  # this should never happen since the above is an infinite loop
